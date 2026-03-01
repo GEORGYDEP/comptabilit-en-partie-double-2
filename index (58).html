@@ -1,0 +1,1858 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comptabilité en Partie Double — Jeu Éducatif</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700&family=Space+Mono:wght@400;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0f1117;
+  --bg-secondary: #181b25;
+  --bg-card: #1e2133;
+  --bg-card-hover: #252940;
+  --border: #2a2f45;
+  --border-light: #353b58;
+  --text-primary: #e8eaf0;
+  --text-secondary: #9ba1b8;
+  --text-muted: #6b7194;
+  --accent-blue: #4f8cff;
+  --accent-blue-dim: #3a6ad4;
+  --accent-green: #34d399;
+  --accent-green-bg: rgba(52,211,153,0.12);
+  --accent-orange: #f59e0b;
+  --accent-orange-bg: rgba(245,158,11,0.12);
+  --accent-red: #f87171;
+  --accent-red-bg: rgba(248,113,113,0.12);
+  --accent-purple: #a78bfa;
+  --accent-teal: #2dd4bf;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.5);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+/* Background pattern */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(79,140,255,0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 100%, rgba(167,139,250,0.06), transparent);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-container {
+  position: relative;
+  z-index: 1;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px;
+  padding-bottom: 60px;
+}
+
+/* ======== HEADER ======== */
+.app-header {
+  text-align: center;
+  padding: 40px 20px 30px;
+  margin-bottom: 30px;
+}
+
+.app-header h1 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple), var(--accent-teal));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.app-header .subtitle {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+
+.app-header .school-tag {
+  display: inline-block;
+  margin-top: 12px;
+  padding: 4px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: 'Space Mono', monospace;
+}
+
+/* ======== PROGRESS BAR ======== */
+.global-progress {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  display: none;
+}
+
+.global-progress.visible { display: block; }
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.progress-header span {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.progress-header .progress-pct {
+  font-family: 'Space Mono', monospace;
+  color: var(--accent-blue);
+  font-size: 0.82rem;
+}
+
+.progress-track {
+  height: 8px;
+  background: var(--bg-primary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+  border-radius: 4px;
+  transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  width: 0%;
+}
+
+/* ======== MENU SCREEN ======== */
+.screen { display: none; }
+.screen.active { display: block; animation: fadeIn 0.3s ease; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.exercise-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.exercise-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.exercise-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; bottom: 0;
+  width: 4px;
+  background: var(--accent-blue);
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+
+.exercise-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-light);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.exercise-card:hover::before { opacity: 1; }
+
+.exercise-card.completed::before {
+  opacity: 1;
+  background: var(--accent-green);
+}
+
+.exercise-card.completed {
+  border-color: rgba(52,211,153,0.25);
+}
+
+.ex-number {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+  background: rgba(79,140,255,0.12);
+  color: var(--accent-blue);
+}
+
+.exercise-card.completed .ex-number {
+  background: var(--accent-green-bg);
+  color: var(--accent-green);
+}
+
+.ex-info { flex: 1; }
+.ex-info h3 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  margin-bottom: 3px;
+}
+
+.ex-info p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.ex-badge {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.ex-badge.easy { background: var(--accent-green-bg); color: var(--accent-green); }
+.ex-badge.medium { background: var(--accent-orange-bg); color: var(--accent-orange); }
+.ex-badge.hard { background: var(--accent-red-bg); color: var(--accent-red); }
+
+/* ======== EXERCISE SCREEN ======== */
+.exercise-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.btn-back {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1.1rem;
+}
+
+.btn-back:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.exercise-title-bar h2 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+}
+
+.exercise-title-bar .q-counter {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-family: 'Space Mono', monospace;
+}
+
+/* Question card */
+.question-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-bottom: 20px;
+}
+
+.question-context {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  font-style: italic;
+  padding: 10px 14px;
+  background: rgba(79,140,255,0.06);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--accent-blue);
+}
+
+.question-text {
+  font-size: 1.05rem;
+  font-weight: 500;
+  margin-bottom: 22px;
+  line-height: 1.7;
+}
+
+.question-text strong {
+  color: var(--accent-blue);
+}
+
+/* Answer options */
+.options-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.option-btn {
+  background: var(--bg-secondary);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 14px 18px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.92rem;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.option-btn:hover:not(.disabled) {
+  background: var(--bg-card-hover);
+  border-color: var(--accent-blue);
+}
+
+.option-btn.selected {
+  border-color: var(--accent-blue);
+  background: rgba(79,140,255,0.08);
+}
+
+.option-btn .opt-letter {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--bg-card);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+
+.option-btn.selected .opt-letter {
+  background: var(--accent-blue);
+  color: #fff;
+}
+
+.option-btn.correct {
+  border-color: var(--accent-green) !important;
+  background: var(--accent-green-bg) !important;
+}
+
+.option-btn.correct .opt-letter {
+  background: var(--accent-green);
+  color: #fff;
+}
+
+.option-btn.wrong {
+  border-color: var(--accent-red) !important;
+  background: var(--accent-red-bg) !important;
+  opacity: 0.7;
+}
+
+.option-btn.wrong .opt-letter {
+  background: var(--accent-red);
+  color: #fff;
+}
+
+.option-btn.disabled {
+  pointer-events: none;
+}
+
+/* Table-based questions */
+.analysis-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.analysis-table th {
+  background: rgba(79,140,255,0.1);
+  padding: 10px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--accent-blue);
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+}
+
+.analysis-table td {
+  padding: 10px 14px;
+  font-size: 0.88rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.analysis-table tr:last-child td { border-bottom: none; }
+
+.analysis-table td.label-cell {
+  text-align: left;
+  font-weight: 500;
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+
+.analysis-table select {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.85rem;
+  cursor: pointer;
+  min-width: 60px;
+  transition: border-color 0.2s;
+}
+
+.analysis-table select:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.analysis-table select.correct-field {
+  border-color: var(--accent-green);
+  background: var(--accent-green-bg);
+}
+
+.analysis-table select.wrong-field {
+  border-color: var(--accent-red);
+  background: var(--accent-red-bg);
+}
+
+.analysis-table input[type="number"],
+.analysis-table input[type="text"] {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1.5px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.85rem;
+  width: 110px;
+  text-align: right;
+  transition: border-color 0.2s;
+}
+
+.analysis-table input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.analysis-table input.correct-field {
+  border-color: var(--accent-green);
+  background: var(--accent-green-bg);
+}
+
+.analysis-table input.wrong-field {
+  border-color: var(--accent-red);
+  background: var(--accent-red-bg);
+}
+
+/* Buttons */
+.btn-row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+
+.btn {
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: none;
+  transition: all 0.25s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: var(--accent-blue);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--accent-blue-dim);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(79,140,255,0.3);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-card-hover);
+}
+
+.btn-success {
+  background: var(--accent-green);
+  color: #0f1117;
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Feedback */
+.feedback-box {
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  margin-top: 16px;
+  font-size: 0.9rem;
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.feedback-box.visible { display: block; }
+
+.feedback-box.success {
+  background: var(--accent-green-bg);
+  border: 1px solid rgba(52,211,153,0.3);
+  color: var(--accent-green);
+}
+
+.feedback-box.retry {
+  background: var(--accent-orange-bg);
+  border: 1px solid rgba(245,158,11,0.3);
+  color: var(--accent-orange);
+}
+
+.feedback-box.fail {
+  background: var(--accent-red-bg);
+  border: 1px solid rgba(248,113,113,0.3);
+  color: var(--accent-red);
+}
+
+.feedback-box .explanation {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Score cards */
+.score-summary {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  margin-top: 20px;
+}
+
+.score-summary h3 {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 1.2rem;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.score-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.score-stat {
+  text-align: center;
+  padding: 16px 10px;
+  border-radius: var(--radius-md);
+}
+
+.score-stat.green { background: var(--accent-green-bg); }
+.score-stat.orange { background: var(--accent-orange-bg); }
+.score-stat.red { background: var(--accent-red-bg); }
+
+.score-stat .stat-icon { font-size: 1.4rem; margin-bottom: 4px; }
+.score-stat .stat-num {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 1.8rem;
+}
+
+.score-stat.green .stat-num { color: var(--accent-green); }
+.score-stat.orange .stat-num { color: var(--accent-orange); }
+.score-stat.red .stat-num { color: var(--accent-red); }
+
+.score-stat .stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.score-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.score-table th {
+  background: var(--bg-secondary);
+  padding: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.score-table td {
+  padding: 10px;
+  text-align: center;
+  font-size: 0.85rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.score-table td:first-child {
+  text-align: left;
+  font-weight: 500;
+}
+
+.score-table tr:last-child td {
+  font-weight: 700;
+  background: var(--bg-card);
+}
+
+/* Drag and drop for account sorting */
+.drag-zone {
+  min-height: 50px;
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  transition: border-color 0.2s;
+  margin-bottom: 10px;
+}
+
+.drag-zone.over {
+  border-color: var(--accent-blue);
+  background: rgba(79,140,255,0.05);
+}
+
+.drag-zone-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.drag-chip {
+  padding: 8px 14px;
+  background: var(--bg-card);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  cursor: grab;
+  user-select: none;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.drag-chip:hover {
+  border-color: var(--accent-blue);
+  background: var(--bg-card-hover);
+}
+
+.drag-chip.correct-chip {
+  border-color: var(--accent-green);
+  background: var(--accent-green-bg);
+  color: var(--accent-green);
+}
+
+.drag-chip.wrong-chip {
+  border-color: var(--accent-red);
+  background: var(--accent-red-bg);
+  color: var(--accent-red);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .app-container { padding: 12px; }
+  .question-card { padding: 18px; }
+  .score-stats { grid-template-columns: 1fr; }
+  .analysis-table { font-size: 0.8rem; }
+  .analysis-table th, .analysis-table td { padding: 8px 6px; }
+  .analysis-table select, .analysis-table input { min-width: 50px; width: 80px; font-size: 0.78rem; padding: 5px 6px; }
+  .btn { padding: 10px 18px; font-size: 0.85rem; }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Hidden utility */
+.hidden { display: none !important; }
+
+/* Confetti canvas */
+#confetti-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 9999;
+}
+</style>
+</head>
+<body>
+<canvas id="confetti-canvas"></canvas>
+
+<div class="app-container">
+  <header class="app-header">
+    <h1>Comptabilité en Partie Double</h1>
+    <p class="subtitle">Maîtrise les écritures comptables étape par étape</p>
+    <span class="school-tag">Institut Saint-Luc de Frameries — 4e TQ</span>
+  </header>
+
+  <div class="global-progress" id="globalProgress">
+    <div class="progress-header">
+      <span>Progression globale</span>
+      <span class="progress-pct" id="progressPct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <!-- ========== MENU ========== -->
+  <div class="screen active" id="menuScreen">
+    <div class="exercise-grid" id="exerciseGrid"></div>
+  </div>
+
+  <!-- ========== EXERCISE ========== -->
+  <div class="screen" id="exerciseScreen">
+    <div class="exercise-header">
+      <button class="btn-back" onclick="backToMenu()" title="Retour">←</button>
+      <div class="exercise-title-bar">
+        <h2 id="exTitle"></h2>
+        <span class="q-counter" id="qCounter"></span>
+      </div>
+    </div>
+    <div id="questionArea"></div>
+    <div class="feedback-box" id="feedback"></div>
+    <div class="btn-row" id="btnRow"></div>
+  </div>
+
+  <!-- ========== RESULTS ========== -->
+  <div class="screen" id="resultsScreen">
+    <div id="resultsContent"></div>
+  </div>
+
+  <!-- ========== FINAL ========== -->
+  <div class="screen" id="finalScreen">
+    <div id="finalContent"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA — All exercises and questions
+// ============================================================
+
+const EXERCISES = [
+  // ============ EXERCICE 1 ============
+  {
+    id: 1,
+    title: "Actif ou Passif ?",
+    desc: "Classe les comptes du PCMN en Actif ou Passif",
+    difficulty: "easy",
+    questions: [
+      {
+        type: "mcq",
+        context: "Le Plan Comptable Minimum Normalisé (PCMN) classe les comptes en deux grandes catégories.",
+        text: "Le compte <strong>« Banque compte courant »</strong> (n° 550) est un compte de :",
+        options: ["Actif — c'est un avoir de l'entreprise", "Passif — c'est une dette de l'entreprise"],
+        correct: 0,
+        explanation: "La banque compte courant représente l'argent que l'entreprise possède sur son compte bancaire. C'est un avoir, donc un élément d'ACTIF."
+      },
+      {
+        type: "mcq",
+        context: "Pense à la question : l'entreprise possède-t-elle quelque chose, ou doit-elle quelque chose ?",
+        text: "Le compte <strong>« Fournisseurs »</strong> (n° 440) est un compte de :",
+        options: ["Actif — c'est une créance de l'entreprise", "Passif — c'est une dette de l'entreprise"],
+        correct: 1,
+        explanation: "Les fournisseurs représentent ce que l'entreprise DOIT à ses fournisseurs. C'est une dette, donc un élément de PASSIF."
+      },
+      {
+        type: "mcq",
+        text: "Le compte <strong>« Clients »</strong> (n° 400) est un compte de :",
+        options: ["Actif — c'est une créance sur les clients", "Passif — c'est une dette envers les clients"],
+        correct: 0,
+        explanation: "Les clients doivent de l'argent à l'entreprise. C'est une créance (un droit), donc un élément d'ACTIF."
+      },
+      {
+        type: "mcq",
+        text: "Le compte <strong>« Capital souscrit »</strong> (n° 100) est un compte de :",
+        options: ["Actif — c'est un bien de l'entreprise", "Passif — c'est une source de financement"],
+        correct: 1,
+        explanation: "Le capital représente ce que l'entreprise doit à ses associés. C'est une source de financement inscrite au PASSIF."
+      },
+      {
+        type: "mcq",
+        text: "Le compte <strong>« Caisse espèces »</strong> (n° 570) est un compte de :",
+        options: ["Actif — c'est de l'argent liquide détenu", "Passif — c'est un engagement financier"],
+        correct: 0,
+        explanation: "La caisse représente l'argent liquide (billets et pièces) que l'entreprise possède physiquement. C'est un ACTIF."
+      },
+      {
+        type: "mcq",
+        text: "Le compte <strong>« Établissements de crédit »</strong> (n° 430) est un compte de :",
+        options: ["Actif — c'est un avoir en banque", "Passif — c'est un emprunt à rembourser"],
+        correct: 1,
+        explanation: "Les établissements de crédit représentent les emprunts bancaires que l'entreprise doit rembourser. C'est une dette, donc un PASSIF."
+      },
+      {
+        type: "mcq",
+        text: "Le compte <strong>« TVA sur achats »</strong> (n° 411) est un compte de :",
+        options: ["Actif — c'est une créance envers l'État", "Passif — c'est une dette envers l'État"],
+        correct: 0,
+        explanation: "La TVA sur achats est une créance : l'État doit « rembourser » cette TVA à l'entreprise (récupérable). C'est un ACTIF."
+      },
+      {
+        type: "mcq",
+        text: "Le compte <strong>« TVA sur ventes »</strong> (n° 451) est un compte de :",
+        options: ["Actif — c'est une créance envers l'État", "Passif — c'est une dette envers l'État"],
+        correct: 1,
+        explanation: "La TVA sur ventes est collectée par l'entreprise pour le compte de l'État. Elle devra la reverser. C'est une dette, donc un PASSIF."
+      },
+      {
+        type: "mcq",
+        text: "Le compte <strong>« Mobilier et matériel de bureau »</strong> (n° 240) est un compte de :",
+        options: ["Actif — ce sont des biens possédés", "Passif — ce sont des engagements"],
+        correct: 0,
+        explanation: "Le mobilier et matériel de bureau sont des biens que l'entreprise possède et utilise. C'est un ACTIF."
+      },
+      {
+        type: "mcq",
+        text: "Le compte <strong>« Matériel roulant »</strong> (n° 241) est un compte de :",
+        options: ["Actif — ce sont des véhicules possédés", "Passif — ce sont des dettes de transport"],
+        correct: 0,
+        explanation: "Le matériel roulant (camionnettes, voitures de société) représente des biens que l'entreprise possède. C'est un ACTIF."
+      }
+    ]
+  },
+
+  // ============ EXERCICE 2 ============
+  {
+    id: 2,
+    title: "Débit ou Crédit ?",
+    desc: "Applique la règle : Actif+ = Débit, Passif+ = Crédit",
+    difficulty: "easy",
+    questions: [
+      {
+        type: "mcq",
+        context: "Règle d'or : Actif augmente → Débit | Actif diminue → Crédit | Passif augmente → Crédit | Passif diminue → Débit",
+        text: "L'entreprise achète un bureau. Le compte <strong>« Mobilier et matériel de bureau »</strong> (Actif) <strong>augmente</strong>. Il faut le :",
+        options: ["Débiter", "Créditer"],
+        correct: 0,
+        explanation: "Un compte d'ACTIF qui AUGMENTE est DÉBITÉ. On inscrit le montant au DÉBIT (côté gauche)."
+      },
+      {
+        type: "mcq",
+        text: "L'entreprise paie un fournisseur. Le compte <strong>« Fournisseurs »</strong> (Passif) <strong>diminue</strong>. Il faut le :",
+        options: ["Débiter", "Créditer"],
+        correct: 0,
+        explanation: "Un compte de PASSIF qui DIMINUE est DÉBITÉ. La dette diminue → on débite le compte Fournisseurs."
+      },
+      {
+        type: "mcq",
+        text: "L'entreprise reçoit une facture d'achat. Le compte <strong>« Fournisseurs »</strong> (Passif) <strong>augmente</strong>. Il faut le :",
+        options: ["Débiter", "Créditer"],
+        correct: 1,
+        explanation: "Un compte de PASSIF qui AUGMENTE est CRÉDITÉ. La dette envers le fournisseur augmente → on crédite."
+      },
+      {
+        type: "mcq",
+        text: "L'entreprise paie par banque. Le compte <strong>« Banque compte courant »</strong> (Actif) <strong>diminue</strong>. Il faut le :",
+        options: ["Débiter", "Créditer"],
+        correct: 1,
+        explanation: "Un compte d'ACTIF qui DIMINUE est CRÉDITÉ. L'argent sort du compte → on crédite la Banque."
+      },
+      {
+        type: "mcq",
+        text: "Un client paie en espèces. Le compte <strong>« Caisse espèces »</strong> (Actif) <strong>augmente</strong>. Il faut le :",
+        options: ["Débiter", "Créditer"],
+        correct: 0,
+        explanation: "Un compte d'ACTIF qui AUGMENTE est DÉBITÉ. L'argent entre en caisse → on débite."
+      },
+      {
+        type: "mcq",
+        text: "L'entreprise contracte un emprunt. Le compte <strong>« Établissements de crédit »</strong> (Passif) <strong>augmente</strong>. Il faut le :",
+        options: ["Débiter", "Créditer"],
+        correct: 1,
+        explanation: "Un compte de PASSIF qui AUGMENTE est CRÉDITÉ. L'emprunt crée une nouvelle dette → on crédite."
+      },
+      {
+        type: "mcq",
+        text: "L'entreprise vend une camionnette. Le compte <strong>« Matériel roulant »</strong> (Actif) <strong>diminue</strong>. Il faut le :",
+        options: ["Débiter", "Créditer"],
+        correct: 1,
+        explanation: "Un compte d'ACTIF qui DIMINUE est CRÉDITÉ. Le véhicule quitte le patrimoine → on crédite."
+      },
+      {
+        type: "mcq",
+        text: "Un client paie sa facture. Le compte <strong>« Clients »</strong> (Actif) <strong>diminue</strong>. Il faut le :",
+        options: ["Débiter", "Créditer"],
+        correct: 1,
+        explanation: "Un compte d'ACTIF qui DIMINUE est CRÉDITÉ. La créance disparaît car le client a payé → on crédite."
+      }
+    ]
+  },
+
+  // ============ EXERCICE 3 ============
+  {
+    id: 3,
+    title: "Analyse d'opérations",
+    desc: "Identifie les comptes, A/P, +/– et D/C pour chaque opération",
+    difficulty: "medium",
+    questions: [
+      {
+        type: "table_analysis",
+        context: "La SRL NetDesign reçoit la facture n° 215 de BureauPro SRL : achat d'un bureau, 800,00 € HTVA + TVA 21 % (168,00 €) = 968,00 € TTC.",
+        text: "Analyse cette opération en complétant le tableau :",
+        rows: [
+          { account: "240 — Mob. et mat. de bureau", ap: "A", pm: "+", dc: "D" },
+          { account: "411 — TVA sur achats", ap: "A", pm: "+", dc: "D" },
+          { account: "440 — Fournisseurs", ap: "P", pm: "+", dc: "C" }
+        ],
+        explanation: "On achète un bureau : le mobilier (Actif) augmente → Débit. La TVA sur achats (Actif, créance envers l'État) augmente → Débit. La dette fournisseur (Passif) augmente → Crédit."
+      },
+      {
+        type: "table_analysis",
+        context: "Extrait de compte Belfius n° 52 : virement de 968,00 € à BureauPro SRL (paiement de la facture n° 215).",
+        text: "Analyse le paiement de cette facture :",
+        rows: [
+          { account: "440 — Fournisseurs", ap: "P", pm: "–", dc: "D" },
+          { account: "550 — Banque cpte courant", ap: "A", pm: "–", dc: "C" }
+        ],
+        explanation: "On paie le fournisseur : la dette (Passif) diminue → Débit. L'argent sort de la banque (Actif diminue) → Crédit."
+      },
+      {
+        type: "table_analysis",
+        context: "La SRL NetDesign envoie sa facture n° 78 au client Leroy : vente d'un écran, 350,00 € + TVA 21 % (73,50 €) = 423,50 € TTC.",
+        text: "Analyse cette vente :",
+        rows: [
+          { account: "400 — Clients", ap: "A", pm: "+", dc: "D" },
+          { account: "240 — Mob. et mat. de bureau", ap: "A", pm: "–", dc: "C" },
+          { account: "451 — TVA sur ventes", ap: "P", pm: "+", dc: "C" }
+        ],
+        explanation: "On vend un écran : la créance client (Actif) augmente → Débit. Le mobilier vendu (Actif) diminue → Crédit. La TVA collectée (Passif, dette envers l'État) augmente → Crédit."
+      },
+      {
+        type: "table_analysis",
+        context: "Pièce de caisse n° 12 : le client Leroy paie notre facture n° 78 en espèces (423,50 €).",
+        text: "Analyse l'encaissement en espèces :",
+        rows: [
+          { account: "570 — Caisse espèces", ap: "A", pm: "+", dc: "D" },
+          { account: "400 — Clients", ap: "A", pm: "–", dc: "C" }
+        ],
+        explanation: "Le client paie cash : la caisse (Actif) augmente → Débit. La créance client (Actif) diminue → Crédit. La créance est soldée."
+      },
+      {
+        type: "table_analysis",
+        context: "Extrait ING n° 90 : emprunt de 5 000,00 € contracté auprès de la banque et versé sur le compte.",
+        text: "Analyse cet emprunt bancaire :",
+        rows: [
+          { account: "550 — Banque cpte courant", ap: "A", pm: "+", dc: "D" },
+          { account: "430 — Établissements de crédit", ap: "P", pm: "+", dc: "C" }
+        ],
+        explanation: "L'argent emprunté arrive en banque (Actif augmente) → Débit. La dette bancaire (Passif) augmente → Crédit."
+      }
+    ]
+  },
+
+  // ============ EXERCICE 4 ============
+  {
+    id: 4,
+    title: "Analyse avec montants",
+    desc: "Complète les montants au débit et au crédit",
+    difficulty: "medium",
+    questions: [
+      {
+        type: "table_amounts",
+        context: "La SRL TechWave reçoit la facture n° 305 de PrintMax SRL : achat d'une imprimante, 1 500,00 € HTVA + TVA 21 %.",
+        text: "Complète les montants au débit et au crédit (TVA = 315,00 €, TTC = 1 815,00 €) :",
+        rows: [
+          { num: "240", account: "Mob. et mat. de bureau", debit: 1500, credit: null },
+          { num: "411", account: "TVA sur achats", debit: 315, credit: null },
+          { num: "440", account: "Fournisseurs", debit: null, credit: 1815 }
+        ],
+        explanation: "Le mobilier (1 500 €) et la TVA (315 €) sont débités (Actif +). Le fournisseur est crédité pour le total TTC (1 815 €). Vérification : D = 1 500 + 315 = 1 815 = C ✓"
+      },
+      {
+        type: "table_amounts",
+        context: "PrintMax SRL acquitte la facture n° 305 par virement bancaire.",
+        text: "Complète les montants pour le paiement de la facture :",
+        rows: [
+          { num: "440", account: "Fournisseurs", debit: 1815, credit: null },
+          { num: "550", account: "Banque cpte courant", debit: null, credit: 1815 }
+        ],
+        explanation: "On paie le fournisseur : Fournisseurs (Passif –) débité de 1 815 €. Banque (Actif –) créditée de 1 815 €. Équilibre D = C ✓"
+      },
+      {
+        type: "table_amounts",
+        context: "Apport de l'entrepreneur : 4 000,00 € versés sur le compte en banque de la SRL TechWave.",
+        text: "Enregistre l'apport au capital :",
+        rows: [
+          { num: "550", account: "Banque cpte courant", debit: 4000, credit: null },
+          { num: "100", account: "Capital souscrit", debit: null, credit: 4000 }
+        ],
+        explanation: "L'argent entre en banque (Actif +) → Débit 4 000 €. Le capital (Passif +) augmente → Crédit 4 000 €."
+      },
+      {
+        type: "table_amounts",
+        context: "Ma facture n° 112 au client Duval : vente d'une chaise de bureau, 450,00 € + TVA 21 % (94,50 €) = 544,50 € TTC.",
+        text: "Enregistre cette vente :",
+        rows: [
+          { num: "400", account: "Clients", debit: 544.50, credit: null },
+          { num: "240", account: "Mob. et mat. de bureau", debit: null, credit: 450 },
+          { num: "451", account: "TVA sur ventes", debit: null, credit: 94.50 }
+        ],
+        explanation: "Client (Actif +) débité de 544,50 €. Mobilier vendu (Actif –) crédité de 450 €. TVA ventes (Passif +) créditée de 94,50 €. Vérification : 544,50 = 450 + 94,50 ✓"
+      },
+      {
+        type: "table_amounts",
+        context: "Le client Duval acquitte ma facture n° 112 en espèces.",
+        text: "Enregistre l'encaissement en espèces de Duval :",
+        rows: [
+          { num: "570", account: "Caisse espèces", debit: 544.50, credit: null },
+          { num: "400", account: "Clients", debit: null, credit: 544.50 }
+        ],
+        explanation: "L'argent liquide arrive en caisse (Actif +) → Débit 544,50 €. La créance client (Actif –) disparaît → Crédit 544,50 €."
+      }
+    ]
+  },
+
+  // ============ EXERCICE 5 ============
+  {
+    id: 5,
+    title: "Comptabilité de STYLEMODE SRL",
+    desc: "Enregistre les opérations de février dans les comptes",
+    difficulty: "hard",
+    questions: [
+      {
+        type: "table_amounts",
+        context: "SRL STYLEMODE — 02/02 : Facture n° 16 de SINGER SRL — Achat d'une machine à coudre, 736,25 € HTVA + TVA 21 % (154,61 €) = 890,86 € TTC.",
+        text: "Enregistre cette facture d'achat (3 comptes) :",
+        rows: [
+          { num: "23", account: "Installations, machines et outillage", debit: 736.25, credit: null },
+          { num: "411", account: "TVA sur achats", debit: 154.61, credit: null },
+          { num: "440", account: "Fournisseurs", debit: null, credit: 890.86 }
+        ],
+        explanation: "La machine (Actif) est débitée de 736,25 €. La TVA récupérable (Actif) est débitée de 154,61 €. La dette fournisseur (Passif) est créditée du TTC : 890,86 €."
+      },
+      {
+        type: "table_amounts",
+        context: "SRL STYLEMODE — 05/02 : Extrait Belfius n° 28 — Virement reçu de 206,80 € de La Bobine (paiement de notre créance).",
+        text: "Enregistre la réception du paiement de La Bobine :",
+        rows: [
+          { num: "550", account: "Belfius banque", debit: 206.80, credit: null },
+          { num: "400", account: "Clients", debit: null, credit: 206.80 }
+        ],
+        explanation: "L'argent arrive en banque Belfius (Actif +) → Débit 206,80 €. La créance client La Bobine (Actif –) disparaît → Crédit 206,80 €."
+      },
+      {
+        type: "table_amounts",
+        context: "SRL STYLEMODE — 23/02 : Facture n° 34 de MEUBLA SRL — Achat de 5 armoires, 687,50 € HTVA + TVA 21 % (144,38 €) = 831,88 € TTC.",
+        text: "Enregistre cette facture d'achat de mobilier :",
+        rows: [
+          { num: "240", account: "Mobilier et matériel de bureau", debit: 687.50, credit: null },
+          { num: "411", account: "TVA sur achats", debit: 144.38, credit: null },
+          { num: "440", account: "Fournisseurs", debit: null, credit: 831.88 }
+        ],
+        explanation: "Le mobilier (Actif) est débité de 687,50 €. La TVA sur achats (Actif) est débitée de 144,38 €. La dette (Passif) est créditée de 831,88 €."
+      },
+      {
+        type: "table_amounts",
+        context: "SRL STYLEMODE — 26/02 : Extrait ING n° 35 — Virement de 831,88 € à MEUBLA (paiement facture n° 34).",
+        text: "Enregistre le paiement à MEUBLA par ING :",
+        rows: [
+          { num: "440", account: "Fournisseurs", debit: 831.88, credit: null },
+          { num: "550", account: "Banque cpte courant (ING)", debit: null, credit: 831.88 }
+        ],
+        explanation: "La dette fournisseur (Passif –) diminue → Débit 831,88 €. L'argent sort de la banque ING (Actif –) → Crédit 831,88 €."
+      },
+      {
+        type: "table_amounts",
+        context: "SRL STYLEMODE — 27/02 : Reçu n° 18 — Prêt de 100,00 € en espèces à M. Derumier.",
+        text: "Enregistre le prêt accordé à M. Derumier :",
+        rows: [
+          { num: "41", account: "Autres créances", debit: 100, credit: null },
+          { num: "570", account: "Caisse espèces", debit: null, credit: 100 }
+        ],
+        explanation: "Le prêt crée une nouvelle créance (Actif +) → Débit 100 €. L'argent sort de la caisse (Actif –) → Crédit 100 €."
+      },
+      {
+        type: "table_amounts",
+        context: "SRL STYLEMODE — 28/02 : Extrait ING n° 36 — Virement de 890,86 € à SINGER (paiement facture n° 16).",
+        text: "Enregistre le paiement à SINGER par ING :",
+        rows: [
+          { num: "440", account: "Fournisseurs", debit: 890.86, credit: null },
+          { num: "550", account: "Banque cpte courant (ING)", debit: null, credit: 890.86 }
+        ],
+        explanation: "La dette fournisseur (Passif –) diminue → Débit 890,86 €. L'argent sort de la banque ING (Actif –) → Crédit 890,86 €."
+      }
+    ]
+  },
+
+  // ============ EXERCICE 6 ============
+  {
+    id: 6,
+    title: "Comptabilité de GREENTECH SRL",
+    desc: "Exercice complet : analyse et enregistrement des opérations de mars",
+    difficulty: "hard",
+    questions: [
+      {
+        type: "table_analysis",
+        context: "SRL GREENTECH — 03/03 : Facture n° 72 de SOLAR PRO SRL — Achat de panneaux solaires, 2 000,00 € HTVA + TVA 21 % (420,00 €) = 2 420,00 € TTC.",
+        text: "Analyse cette opération (A/P, +/–, D/C) :",
+        rows: [
+          { account: "24 — Matériel", ap: "A", pm: "+", dc: "D" },
+          { account: "411 — TVA sur achats", ap: "A", pm: "+", dc: "D" },
+          { account: "440 — Fournisseurs", ap: "P", pm: "+", dc: "C" }
+        ],
+        explanation: "Achat de matériel : le compte Matériel (Actif) augmente → Débit. La TVA récupérable (Actif) augmente → Débit. La dette fournisseur (Passif) augmente → Crédit."
+      },
+      {
+        type: "table_amounts",
+        context: "SRL GREENTECH — 03/03 : Maintenant, enregistre les montants de cette même facture n° 72.",
+        text: "Complète les montants au débit et au crédit :",
+        rows: [
+          { num: "24", account: "Matériel", debit: 2000, credit: null },
+          { num: "411", account: "TVA sur achats", debit: 420, credit: null },
+          { num: "440", account: "Fournisseurs", debit: null, credit: 2420 }
+        ],
+        explanation: "Matériel débité de 2 000 €, TVA débitée de 420 €, Fournisseurs crédités de 2 420 € (TTC). Total D = 2 420 = Total C ✓"
+      },
+      {
+        type: "table_analysis",
+        context: "SRL GREENTECH — 10/03 : Extrait Belfius n° 14 — Virement reçu de 1 210,00 € de Dupuis (paiement de notre créance).",
+        text: "Analyse la réception du paiement de Dupuis :",
+        rows: [
+          { account: "550 — Banque (Belfius)", ap: "A", pm: "+", dc: "D" },
+          { account: "400 — Clients", ap: "A", pm: "–", dc: "C" }
+        ],
+        explanation: "L'argent entre en banque (Actif augmente) → Débit. La créance client disparaît (Actif diminue) → Crédit."
+      },
+      {
+        type: "table_analysis",
+        context: "SRL GREENTECH — 15/03 : Ma facture n° 88 à CONSTRUBEL SRL — Vente d'un lot de câbles, 500,00 € + TVA 21 % (105,00 €) = 605,00 € TTC.",
+        text: "Analyse cette vente de matériel :",
+        rows: [
+          { account: "400 — Clients", ap: "A", pm: "+", dc: "D" },
+          { account: "24 — Matériel", ap: "A", pm: "–", dc: "C" },
+          { account: "451 — TVA sur ventes", ap: "P", pm: "+", dc: "C" }
+        ],
+        explanation: "La créance client (Actif) augmente → Débit. Le matériel vendu (Actif) diminue → Crédit. La TVA collectée (Passif) augmente → Crédit."
+      },
+      {
+        type: "table_amounts",
+        context: "SRL GREENTECH — 22/03 : Extrait Belfius n° 15 — Virement de 2 420,00 € à SOLAR PRO (paiement facture n° 72).",
+        text: "Enregistre le paiement à SOLAR PRO :",
+        rows: [
+          { num: "440", account: "Fournisseurs", debit: 2420, credit: null },
+          { num: "550", account: "Banque (Belfius)", debit: null, credit: 2420 }
+        ],
+        explanation: "La dette fournisseur (Passif –) diminue → Débit 2 420 €. L'argent sort de la banque (Actif –) → Crédit 2 420 €."
+      },
+      {
+        type: "table_amounts",
+        context: "SRL GREENTECH — 28/03 : Pièce de caisse n° 5 — CONSTRUBEL paie notre facture n° 88 en espèces (605,00 €).",
+        text: "Enregistre l'encaissement en espèces :",
+        rows: [
+          { num: "570", account: "Caisse espèces", debit: 605, credit: null },
+          { num: "400", account: "Clients", debit: null, credit: 605 }
+        ],
+        explanation: "La caisse (Actif +) augmente → Débit 605 €. La créance client (Actif –) disparaît → Crédit 605 €."
+      }
+    ]
+  }
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  currentExercise: null,
+  currentQuestion: 0,
+  attempt: 1,
+  scores: {}, // { exerciseId: { first: n, second: n, shown: n, total: n } }
+  completedExercises: new Set()
+};
+
+// Init scores
+EXERCISES.forEach(ex => {
+  state.scores[ex.id] = { first: 0, second: 0, shown: 0, total: ex.questions.length };
+});
+
+// ============================================================
+// RENDER MENU
+// ============================================================
+function renderMenu() {
+  const grid = document.getElementById('exerciseGrid');
+  grid.innerHTML = '';
+  
+  EXERCISES.forEach(ex => {
+    const completed = state.completedExercises.has(ex.id);
+    const score = state.scores[ex.id];
+    const card = document.createElement('div');
+    card.className = 'exercise-card' + (completed ? ' completed' : '');
+    card.onclick = () => startExercise(ex.id);
+    
+    let statusText = `${ex.questions.length} questions`;
+    if (completed) {
+      statusText = `✅ ${score.first}  🔄 ${score.second}  👁 ${score.shown}`;
+    }
+    
+    card.innerHTML = `
+      <div class="ex-number">${completed ? '✓' : ex.id}</div>
+      <div class="ex-info">
+        <h3>${ex.title}</h3>
+        <p>${ex.desc} — ${statusText}</p>
+      </div>
+      <span class="ex-badge ${ex.difficulty}">${ex.difficulty === 'easy' ? 'Facile' : ex.difficulty === 'medium' ? 'Moyen' : 'Avancé'}</span>
+    `;
+    grid.appendChild(card);
+  });
+
+  // Add final bilan button if all completed
+  if (state.completedExercises.size === EXERCISES.length) {
+    const btn = document.createElement('div');
+    btn.className = 'exercise-card';
+    btn.style.borderColor = 'rgba(167,139,250,0.4)';
+    btn.style.background = 'rgba(167,139,250,0.08)';
+    btn.onclick = showFinalResults;
+    btn.innerHTML = `
+      <div class="ex-number" style="background:rgba(167,139,250,0.15);color:var(--accent-purple);">🏆</div>
+      <div class="ex-info">
+        <h3>Bilan final</h3>
+        <p>Consulte ton résultat global sur tous les exercices</p>
+      </div>
+    `;
+    grid.appendChild(btn);
+  }
+
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = EXERCISES.reduce((s, e) => s + e.questions.length, 0);
+  const done = EXERCISES.reduce((s, e) => {
+    if (state.completedExercises.has(e.id)) return s + e.questions.length;
+    return s;
+  }, 0);
+  const pct = Math.round((done / total) * 100);
+  
+  const gp = document.getElementById('globalProgress');
+  gp.classList.toggle('visible', done > 0);
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressFill').style.width = pct + '%';
+}
+
+// ============================================================
+// SCREEN MANAGEMENT
+// ============================================================
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function backToMenu() {
+  showScreen('menuScreen');
+  renderMenu();
+}
+
+// ============================================================
+// START EXERCISE
+// ============================================================
+function startExercise(id) {
+  const ex = EXERCISES.find(e => e.id === id);
+  state.currentExercise = ex;
+  state.currentQuestion = 0;
+  state.attempt = 1;
+  // Reset score for this exercise
+  state.scores[ex.id] = { first: 0, second: 0, shown: 0, total: ex.questions.length };
+  state.completedExercises.delete(ex.id);
+  
+  document.getElementById('exTitle').textContent = `Exercice ${ex.id} — ${ex.title}`;
+  showScreen('exerciseScreen');
+  renderQuestion();
+}
+
+// ============================================================
+// RENDER QUESTION
+// ============================================================
+function renderQuestion() {
+  const ex = state.currentExercise;
+  const qi = state.currentQuestion;
+  const q = ex.questions[qi];
+  state.attempt = 1;
+  
+  document.getElementById('qCounter').textContent = `Question ${qi + 1} / ${ex.questions.length}`;
+  
+  const area = document.getElementById('questionArea');
+  const feedback = document.getElementById('feedback');
+  feedback.className = 'feedback-box';
+  feedback.innerHTML = '';
+  
+  const btnRow = document.getElementById('btnRow');
+  btnRow.innerHTML = '';
+  
+  if (q.type === 'mcq') {
+    renderMCQ(area, q);
+  } else if (q.type === 'table_analysis') {
+    renderTableAnalysis(area, q);
+  } else if (q.type === 'table_amounts') {
+    renderTableAmounts(area, q);
+  }
+}
+
+// ---- MCQ ----
+function renderMCQ(area, q) {
+  const letters = ['A', 'B', 'C', 'D'];
+  let html = `<div class="question-card">`;
+  if (q.context) html += `<div class="question-context">${q.context}</div>`;
+  html += `<div class="question-text">${q.text}</div>`;
+  html += `<div class="options-grid">`;
+  q.options.forEach((opt, i) => {
+    html += `<button class="option-btn" data-idx="${i}" onclick="selectMCQ(this, ${i})">
+      <span class="opt-letter">${letters[i]}</span>
+      <span>${opt}</span>
+    </button>`;
+  });
+  html += `</div></div>`;
+  area.innerHTML = html;
+  
+  const btnRow = document.getElementById('btnRow');
+  btnRow.innerHTML = `<button class="btn btn-primary" id="btnValidate" onclick="validateMCQ()" disabled>Valider ma réponse</button>`;
+}
+
+let selectedMCQ = -1;
+
+function selectMCQ(el, idx) {
+  if (el.classList.contains('disabled')) return;
+  selectedMCQ = idx;
+  document.querySelectorAll('.option-btn').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btnValidate').disabled = false;
+}
+
+function validateMCQ() {
+  const q = state.currentExercise.questions[state.currentQuestion];
+  const correct = q.correct;
+  const btns = document.querySelectorAll('.option-btn');
+  const feedback = document.getElementById('feedback');
+  const btnRow = document.getElementById('btnRow');
+  
+  if (selectedMCQ === correct) {
+    // Correct
+    btns[selectedMCQ].classList.add('correct');
+    btns.forEach(b => b.classList.add('disabled'));
+    
+    if (state.attempt === 1) {
+      state.scores[state.currentExercise.id].first++;
+      feedback.innerHTML = `✅ Bravo ! Bonne réponse du premier coup !<div class="explanation">${q.explanation}</div>`;
+      feedback.className = 'feedback-box visible success';
+    } else {
+      state.scores[state.currentExercise.id].second++;
+      feedback.innerHTML = `🔄 Corrigé au 2e essai — bien joué !<div class="explanation">${q.explanation}</div>`;
+      feedback.className = 'feedback-box visible retry';
+    }
+    btnRow.innerHTML = nextBtnHTML();
+  } else {
+    // Wrong
+    btns[selectedMCQ].classList.add('wrong');
+    btns[selectedMCQ].classList.add('disabled');
+    
+    if (state.attempt === 1) {
+      state.attempt = 2;
+      feedback.innerHTML = `❌ Ce n'est pas la bonne réponse. Essaie encore !`;
+      feedback.className = 'feedback-box visible fail';
+      selectedMCQ = -1;
+      btnRow.innerHTML = `<button class="btn btn-primary" id="btnValidate" onclick="validateMCQ()" disabled>Valider (2e essai)</button>`;
+    } else {
+      // Show answer
+      state.scores[state.currentExercise.id].shown++;
+      btns[correct].classList.add('correct');
+      btns.forEach(b => b.classList.add('disabled'));
+      feedback.innerHTML = `👁 Voici la bonne réponse :<div class="explanation">${q.explanation}</div>`;
+      feedback.className = 'feedback-box visible fail';
+      btnRow.innerHTML = nextBtnHTML();
+    }
+  }
+}
+
+// ---- TABLE ANALYSIS ----
+function renderTableAnalysis(area, q) {
+  let html = `<div class="question-card">`;
+  if (q.context) html += `<div class="question-context">${q.context}</div>`;
+  html += `<div class="question-text">${q.text}</div>`;
+  html += `<table class="analysis-table"><thead><tr>
+    <th>Compte</th><th>A / P</th><th>+ / –</th><th>D / C</th>
+  </tr></thead><tbody>`;
+  
+  q.rows.forEach((row, ri) => {
+    html += `<tr>
+      <td class="label-cell">${row.account}</td>
+      <td><select id="ap_${ri}" class="sel-field">
+        <option value="">—</option><option value="A">A</option><option value="P">P</option>
+      </select></td>
+      <td><select id="pm_${ri}" class="sel-field">
+        <option value="">—</option><option value="+">+</option><option value="–">–</option>
+      </select></td>
+      <td><select id="dc_${ri}" class="sel-field">
+        <option value="">—</option><option value="D">D</option><option value="C">C</option>
+      </select></td>
+    </tr>`;
+  });
+  
+  html += `</tbody></table></div>`;
+  area.innerHTML = html;
+  
+  const btnRow = document.getElementById('btnRow');
+  btnRow.innerHTML = `<button class="btn btn-primary" onclick="validateTableAnalysis()">Valider ma réponse</button>`;
+}
+
+function validateTableAnalysis() {
+  const q = state.currentExercise.questions[state.currentQuestion];
+  const feedback = document.getElementById('feedback');
+  const btnRow = document.getElementById('btnRow');
+  
+  let allCorrect = true;
+  let fields = [];
+  
+  q.rows.forEach((row, ri) => {
+    const apEl = document.getElementById(`ap_${ri}`);
+    const pmEl = document.getElementById(`pm_${ri}`);
+    const dcEl = document.getElementById(`dc_${ri}`);
+    
+    const checks = [
+      { el: apEl, val: apEl.value, correct: row.ap },
+      { el: pmEl, val: pmEl.value, correct: row.pm },
+      { el: dcEl, val: dcEl.value, correct: row.dc }
+    ];
+    
+    checks.forEach(c => {
+      fields.push(c);
+      if (c.val === c.correct) {
+        c.el.classList.remove('wrong-field');
+        c.el.classList.add('correct-field');
+      } else {
+        c.el.classList.remove('correct-field');
+        c.el.classList.add('wrong-field');
+        allCorrect = false;
+      }
+    });
+  });
+  
+  if (allCorrect) {
+    fields.forEach(f => f.el.disabled = true);
+    if (state.attempt === 1) {
+      state.scores[state.currentExercise.id].first++;
+      feedback.innerHTML = `✅ Parfait ! Tout est correct du premier coup !<div class="explanation">${q.explanation}</div>`;
+      feedback.className = 'feedback-box visible success';
+    } else {
+      state.scores[state.currentExercise.id].second++;
+      feedback.innerHTML = `🔄 Corrigé au 2e essai — bien joué !<div class="explanation">${q.explanation}</div>`;
+      feedback.className = 'feedback-box visible retry';
+    }
+    btnRow.innerHTML = nextBtnHTML();
+  } else {
+    if (state.attempt === 1) {
+      state.attempt = 2;
+      feedback.innerHTML = `❌ Certaines réponses sont incorrectes (en rouge). Corrige-les et réessaie !`;
+      feedback.className = 'feedback-box visible fail';
+      btnRow.innerHTML = `<button class="btn btn-primary" onclick="validateTableAnalysis()">Valider (2e essai)</button>`;
+    } else {
+      state.scores[state.currentExercise.id].shown++;
+      // Show correct answers
+      q.rows.forEach((row, ri) => {
+        const apEl = document.getElementById(`ap_${ri}`);
+        const pmEl = document.getElementById(`pm_${ri}`);
+        const dcEl = document.getElementById(`dc_${ri}`);
+        apEl.value = row.ap; apEl.disabled = true; apEl.className = 'sel-field correct-field';
+        pmEl.value = row.pm; pmEl.disabled = true; pmEl.className = 'sel-field correct-field';
+        dcEl.value = row.dc; dcEl.disabled = true; dcEl.className = 'sel-field correct-field';
+      });
+      feedback.innerHTML = `👁 Voici les bonnes réponses :<div class="explanation">${q.explanation}</div>`;
+      feedback.className = 'feedback-box visible fail';
+      btnRow.innerHTML = nextBtnHTML();
+    }
+  }
+}
+
+// ---- TABLE AMOUNTS ----
+function renderTableAmounts(area, q) {
+  let html = `<div class="question-card">`;
+  if (q.context) html += `<div class="question-context">${q.context}</div>`;
+  html += `<div class="question-text">${q.text}</div>`;
+  html += `<table class="analysis-table"><thead><tr>
+    <th>N°</th><th>Nom du compte</th><th>Débit (€)</th><th>Crédit (€)</th>
+  </tr></thead><tbody>`;
+  
+  q.rows.forEach((row, ri) => {
+    const dVal = row.debit !== null;
+    const cVal = row.credit !== null;
+    html += `<tr>
+      <td style="font-family:'Space Mono',monospace;font-weight:600;color:var(--accent-blue)">${row.num}</td>
+      <td class="label-cell">${row.account}</td>
+      <td>${dVal ? `<input type="text" id="d_${ri}" placeholder="0,00" inputmode="decimal">` : ''}</td>
+      <td>${cVal ? `<input type="text" id="c_${ri}" placeholder="0,00" inputmode="decimal">` : ''}</td>
+    </tr>`;
+  });
+  
+  html += `</tbody></table></div>`;
+  area.innerHTML = html;
+  
+  const btnRow = document.getElementById('btnRow');
+  btnRow.innerHTML = `<button class="btn btn-primary" onclick="validateTableAmounts()">Valider ma réponse</button>`;
+}
+
+function parseAmount(str) {
+  if (!str) return NaN;
+  // Handle both comma and dot as decimal separator
+  str = str.trim().replace(/\s/g, '').replace(',', '.');
+  // Remove trailing € if present
+  str = str.replace('€', '').trim();
+  return parseFloat(str);
+}
+
+function validateTableAmounts() {
+  const q = state.currentExercise.questions[state.currentQuestion];
+  const feedback = document.getElementById('feedback');
+  const btnRow = document.getElementById('btnRow');
+  
+  let allCorrect = true;
+  let fields = [];
+  
+  q.rows.forEach((row, ri) => {
+    if (row.debit !== null) {
+      const el = document.getElementById(`d_${ri}`);
+      const val = parseAmount(el.value);
+      const correct = Math.abs(val - row.debit) < 0.01;
+      fields.push({ el, correct, correctVal: row.debit });
+      if (correct) {
+        el.classList.remove('wrong-field');
+        el.classList.add('correct-field');
+      } else {
+        el.classList.remove('correct-field');
+        el.classList.add('wrong-field');
+        allCorrect = false;
+      }
+    }
+    if (row.credit !== null) {
+      const el = document.getElementById(`c_${ri}`);
+      const val = parseAmount(el.value);
+      const correct = Math.abs(val - row.credit) < 0.01;
+      fields.push({ el, correct, correctVal: row.credit });
+      if (correct) {
+        el.classList.remove('wrong-field');
+        el.classList.add('correct-field');
+      } else {
+        el.classList.remove('correct-field');
+        el.classList.add('wrong-field');
+        allCorrect = false;
+      }
+    }
+  });
+  
+  if (allCorrect) {
+    fields.forEach(f => f.el.disabled = true);
+    if (state.attempt === 1) {
+      state.scores[state.currentExercise.id].first++;
+      feedback.innerHTML = `✅ Parfait ! Tous les montants sont corrects !<div class="explanation">${q.explanation}</div>`;
+      feedback.className = 'feedback-box visible success';
+    } else {
+      state.scores[state.currentExercise.id].second++;
+      feedback.innerHTML = `🔄 Corrigé au 2e essai — bien joué !<div class="explanation">${q.explanation}</div>`;
+      feedback.className = 'feedback-box visible retry';
+    }
+    btnRow.innerHTML = nextBtnHTML();
+  } else {
+    if (state.attempt === 1) {
+      state.attempt = 2;
+      feedback.innerHTML = `❌ Certains montants sont incorrects (en rouge). Corrige-les et réessaie !<br><small style="color:var(--text-muted)">💡 Utilise le point ou la virgule comme séparateur décimal.</small>`;
+      feedback.className = 'feedback-box visible fail';
+      btnRow.innerHTML = `<button class="btn btn-primary" onclick="validateTableAmounts()">Valider (2e essai)</button>`;
+    } else {
+      state.scores[state.currentExercise.id].shown++;
+      // Show correct answers
+      fields.forEach(f => {
+        f.el.value = f.correctVal.toFixed(2).replace('.', ',');
+        f.el.disabled = true;
+        f.el.className = f.el.className.replace('wrong-field', '') + ' correct-field';
+      });
+      feedback.innerHTML = `👁 Voici les montants corrects :<div class="explanation">${q.explanation}</div>`;
+      feedback.className = 'feedback-box visible fail';
+      btnRow.innerHTML = nextBtnHTML();
+    }
+  }
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function nextBtnHTML() {
+  const ex = state.currentExercise;
+  const qi = state.currentQuestion;
+  if (qi < ex.questions.length - 1) {
+    return `<button class="btn btn-primary" onclick="nextQuestion()">Question suivante ➜</button>`;
+  } else {
+    return `<button class="btn btn-success" onclick="showExerciseResults()">Voir mes résultats 📊</button>`;
+  }
+}
+
+function nextQuestion() {
+  state.currentQuestion++;
+  selectedMCQ = -1;
+  renderQuestion();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ============================================================
+// RESULTS
+// ============================================================
+function showExerciseResults() {
+  const ex = state.currentExercise;
+  const s = state.scores[ex.id];
+  state.completedExercises.add(ex.id);
+  
+  const pct = Math.round((s.first / s.total) * 100);
+  let emoji = pct >= 80 ? '🎉' : pct >= 50 ? '👍' : '💪';
+  
+  let html = `<div class="score-summary">
+    <h3>${emoji} Résultats — Exercice ${ex.id} : ${ex.title}</h3>
+    <div class="score-stats">
+      <div class="score-stat green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-num">${s.first}</div>
+        <div class="stat-label">1er essai</div>
+      </div>
+      <div class="score-stat orange">
+        <div class="stat-icon">🔄</div>
+        <div class="stat-num">${s.second}</div>
+        <div class="stat-label">2e essai</div>
+      </div>
+      <div class="score-stat red">
+        <div class="stat-icon">👁</div>
+        <div class="stat-num">${s.shown}</div>
+        <div class="stat-label">Montrées</div>
+      </div>
+    </div>
+    <p style="text-align:center;color:var(--text-secondary);margin-bottom:20px;">Score : ${s.first} / ${s.total} au 1er essai (${pct} %)</p>
+    <div class="btn-row" style="justify-content:center;">
+      <button class="btn btn-secondary" onclick="startExercise(${ex.id})">🔁 Recommencer</button>
+      <button class="btn btn-primary" onclick="backToMenu()">Retour au menu</button>
+      ${state.completedExercises.size === EXERCISES.length ? `<button class="btn btn-success" onclick="showFinalResults()">🏆 Bilan final</button>` : ''}
+    </div>
+  </div>`;
+  
+  document.getElementById('resultsContent').innerHTML = html;
+  showScreen('resultsScreen');
+  
+  if (pct >= 80) launchConfetti();
+}
+
+function showFinalResults() {
+  let totalFirst = 0, totalSecond = 0, totalShown = 0, totalQ = 0;
+  
+  let tableRows = '';
+  EXERCISES.forEach(ex => {
+    const s = state.scores[ex.id];
+    totalFirst += s.first;
+    totalSecond += s.second;
+    totalShown += s.shown;
+    totalQ += s.total;
+    const pct = Math.round((s.first / s.total) * 100);
+    tableRows += `<tr>
+      <td>Ex. ${ex.id} — ${ex.title}</td>
+      <td style="color:var(--accent-green)">${s.first}</td>
+      <td style="color:var(--accent-orange)">${s.second}</td>
+      <td style="color:var(--accent-red)">${s.shown}</td>
+      <td>${s.total}</td>
+      <td><strong>${pct} %</strong></td>
+    </tr>`;
+  });
+  
+  const globalPct = Math.round((totalFirst / totalQ) * 100);
+  let emoji = globalPct >= 80 ? '🏆' : globalPct >= 50 ? '👏' : '💪';
+  
+  tableRows += `<tr>
+    <td><strong>TOTAUX</strong></td>
+    <td style="color:var(--accent-green)"><strong>${totalFirst}</strong></td>
+    <td style="color:var(--accent-orange)"><strong>${totalSecond}</strong></td>
+    <td style="color:var(--accent-red)"><strong>${totalShown}</strong></td>
+    <td><strong>${totalQ}</strong></td>
+    <td><strong>${globalPct} %</strong></td>
+  </tr>`;
+  
+  let html = `<div class="score-summary">
+    <h3>${emoji} Bilan Final — Tous les exercices</h3>
+    <div class="score-stats">
+      <div class="score-stat green">
+        <div class="stat-icon">✅</div>
+        <div class="stat-num">${totalFirst}</div>
+        <div class="stat-label">1er essai</div>
+      </div>
+      <div class="score-stat orange">
+        <div class="stat-icon">🔄</div>
+        <div class="stat-num">${totalSecond}</div>
+        <div class="stat-label">2e essai</div>
+      </div>
+      <div class="score-stat red">
+        <div class="stat-icon">👁</div>
+        <div class="stat-num">${totalShown}</div>
+        <div class="stat-label">Montrées</div>
+      </div>
+    </div>
+    <table class="score-table">
+      <thead><tr>
+        <th>Exercice</th><th>✅ 1er</th><th>🔄 2e</th><th>👁 Montrées</th><th>Total</th><th>Score</th>
+      </tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+    <div class="btn-row" style="justify-content:center;margin-top:20px;">
+      <button class="btn btn-primary" onclick="backToMenu()">Retour au menu</button>
+    </div>
+  </div>`;
+  
+  document.getElementById('finalContent').innerHTML = html;
+  showScreen('finalScreen');
+  
+  if (globalPct >= 70) launchConfetti();
+}
+
+// ============================================================
+// CONFETTI
+// ============================================================
+function launchConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  
+  const particles = [];
+  const colors = ['#4f8cff','#a78bfa','#34d399','#f59e0b','#f87171','#2dd4bf'];
+  
+  for (let i = 0; i < 120; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height - canvas.height,
+      w: Math.random() * 8 + 4,
+      h: Math.random() * 6 + 3,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vy: Math.random() * 3 + 2,
+      vx: (Math.random() - 0.5) * 2,
+      rot: Math.random() * 360,
+      vr: (Math.random() - 0.5) * 8
+    });
+  }
+  
+  let frame = 0;
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let alive = false;
+    particles.forEach(p => {
+      if (p.y < canvas.height + 20) alive = true;
+      p.y += p.vy;
+      p.x += p.vx;
+      p.rot += p.vr;
+      p.vy += 0.05;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot * Math.PI / 180);
+      ctx.fillStyle = p.color;
+      ctx.globalAlpha = Math.max(0, 1 - frame / 120);
+      ctx.fillRect(-p.w/2, -p.h/2, p.w, p.h);
+      ctx.restore();
+    });
+    frame++;
+    if (alive && frame < 150) {
+      requestAnimationFrame(animate);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+  animate();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderMenu();
+</script>
+</body>
+</html>
